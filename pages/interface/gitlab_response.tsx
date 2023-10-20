@@ -3,6 +3,13 @@ export interface GitlabReviewResponse {
     message?: string
 }
 
+export interface GitlabReviewResponseV2 {
+    result?: string,
+    message?: string,
+    resultArray?: string[],
+    resultFinal?: FinalResultItem[]
+}
+
 export interface ReviewData {
     maintainability?: SectionData
     readability?: SectionData

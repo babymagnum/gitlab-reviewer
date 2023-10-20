@@ -19,7 +19,7 @@ const chatModel = new ChatOpenAI({
     temperature: 0.15,
     topP: 0.85,
     maxTokens: -1,
-    verbose: true,
+    verbose: false,
     azureOpenAIApiKey: "ae283827498e4794963e3d423b0e9bf3",
     azureOpenAIApiVersion: "2023-07-01-preview",
     azureOpenAIApiDeploymentName: "gpt-35-turbo",
@@ -40,9 +40,9 @@ function setResponseError(statusCode: number, message: string, response: NextApi
     })
 }
 
-async function cloneAndListFiles(url: string, response: NextApiResponse<GitlabReviewResponse>) {
+async function cloneAndListFiles(url: string, customParameter: string, customOutput: string, response: NextApiResponse<GitlabReviewResponse>) {
     // Define the directory where you want to clone the repository
-    const cloneDirectory = `./././reviews/${url.split("/").pop()}`;
+    const cloneDirectory = `././././reviews/${url.split("/").pop()}`;
 
     try {
         // Git clone command
@@ -57,6 +57,8 @@ async function cloneAndListFiles(url: string, response: NextApiResponse<GitlabRe
             // Execute the Git clone command
             await execAsync(cloneCommand);
             console.log(`Git repository cloned to ${cloneDirectory}`);
+        } else {
+            console.log(`${cloneDirectory} is exist`)
         }
 
         // Execute the Git ls-tree command inside the cloned repository directory
@@ -70,30 +72,28 @@ async function cloneAndListFiles(url: string, response: NextApiResponse<GitlabRe
         // Split the stdout into an array of file paths
         const fileList = listStdout.trim().split('\n');
 
-        filterFilesUsingOpenAI(fileList, cloneDirectory, response)
+        console.log('== All Files in Repo ==\n')
+        fileList.forEach((element, index) => {
+            console.log(`${index + 1}. ${element}`)
+        })
+
+        filterFilesUsingOpenAI(fileList, customParameter, customOutput, cloneDirectory, response)
     } catch (error) {
         setResponseError(500, error.message, response)
     }
 }
 
-// use below function to perform review about the structure folder
-async function reviewStructureFolderUsingOpenAI() {
-
-}
-
-async function filterFilesUsingOpenAI(files: string[], cloneDirectory: string, response: NextApiResponse<GitlabReviewResponse>) {
+async function filterFilesUsingOpenAI(files: string[], customParameter: string, customOutput: string, cloneDirectory: string, response: NextApiResponse<GitlabReviewResponse>) {
     const result = await chatModel.call([
         new SystemMessage(`
-    You're a senior Javascript developer, please do a review with below apps structure project
+    You're a senior web developer, please do a review with below apps structure project
 
-    the subject of review is:
-    1. folder structure => maintanable, readable, and scalable
-    2. code structure => maintanable, readable, and scalable
+    the subject of review is ${customParameter}
     `),
         new HumanMessage(`
-    Your first task will be select files from data below that you are interest for code review
+    Your first task will select files from data below that you are interest for code review
 
-    ${files} 
+    ${files}
     `),
     ]);
 
@@ -101,22 +101,27 @@ async function filterFilesUsingOpenAI(files: string[], cloneDirectory: string, r
         new HumanMessage(`
     Please remove the number and format the result to array of string from data below
 
-    ${result.content} 
+    ${result.content}
     `),
     ]);
 
     let filteredFiles: string[] = JSON.parse(result2.content)
 
-    getTheContent(filteredFiles, cloneDirectory, response)
+    console.log('== Filtered Files ==\n')
+    filteredFiles.forEach((element, index) => {
+        console.log(`${index + 1}. ${element}`)
+    })
+
+    getTheContent(filteredFiles, customParameter, customOutput, cloneDirectory, response)
 }
 
-async function getTheContent(files: string[], cloneDirectory: string, response: NextApiResponse<GitlabReviewResponse>) {
+async function getTheContent(files: string[], customParameter: string, customOutput: string, cloneDirectory: string, response: NextApiResponse<GitlabReviewResponse>) {
     let allDocs: any[] = []
 
     for await (const [i, file] of files.entries()) {
         if (file.includes("learning")) continue
 
-        const catCommand = `cat ${file}`;
+        const catCommand = `cat ${file}`
 
         const { stdout: singleStdout, stderr: singleStderr } = await execAsync(catCommand, { cwd: cloneDirectory });
 
@@ -127,13 +132,15 @@ async function getTheContent(files: string[], cloneDirectory: string, response: 
       You're a senior web developer that will help us to review the others developer projects code
       `),
             new HumanMessage(`
-      please review below code, the subject for review is maintanability, readability, and scalability
+      please review below code, the subject for review is ${customParameter}
 
-      please include pros and cons about each review subject
+      please include ${customOutput} as part of the output
 
       ${singleStdout.trim()} 
       `),
         ]);
+
+        console.log(`${file} ==> ${response.content}`)
 
         const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 400, chunkOverlap: 400 / 5 });
         const docs = await textSplitter.createDocuments([response.content]);
@@ -144,7 +151,7 @@ async function getTheContent(files: string[], cloneDirectory: string, response: 
     if (allDocs.length === 0) {
         setResponseError(500, "Failed to send data to OpenAI", response)
         return
-    }
+    }    
 
     summarizeAllDocs(allDocs, response)
 }
@@ -223,7 +230,7 @@ async function summarizeAllDocs(documents: Document[], response: NextApiResponse
 async function formatTheAllSummaryToJSON(result: string, response: NextApiResponse<GitlabReviewResponse>) {
     const parser = StructuredOutputParser.fromZodSchema(
         z.object({
-            maintainability: z.object({
+            "maintainability": z.object({
                 pros: z.array(
                     z.object({
                         title: z.string(),
@@ -237,7 +244,7 @@ async function formatTheAllSummaryToJSON(result: string, response: NextApiRespon
                     })
                 ).describe("array for showing the data relevant to maintainability section that cons with the review")
             }).describe("object for maintainability section"),
-            readability: z.object({
+            "readability": z.object({
                 pros: z.array(
                     z.object({
                         title: z.string(),
@@ -251,7 +258,7 @@ async function formatTheAllSummaryToJSON(result: string, response: NextApiRespon
                     })
                 ).describe("array for showing the data relevant to readability section that cons with the review")
             }).describe("object for readability section"),
-            scalability: z.object({
+            "scalability": z.object({
                 pros: z.array(
                     z.object({
                         title: z.string(),
@@ -265,8 +272,8 @@ async function formatTheAllSummaryToJSON(result: string, response: NextApiRespon
                     })
                 ).describe("array for showing the data relevant to scalability section that cons with the review")
             }).describe("object for scalability section"),
-            summary: z.string().describe("sources used to answer the question, should be websites."),
-            score: z.number().describe("score for overall review, the value will be 0-100")
+            "summary": z.string().describe("sources used to answer the question, should be websites."),
+            "score": z.number().describe("score for overall review, the value will be 0-100")
         })
     );
 
@@ -309,6 +316,8 @@ async function formatTheAllSummaryToJSON(result: string, response: NextApiRespon
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse<GitlabReviewResponse>) {
     const url = request.body.url || '';
+    const customParameter = request.body.custom_parameter || 'maintanability, readability, scalability';
+    const customOutput = request.body.custom_output || '';
 
     if (url.trim().length === 0) {
         setResponseError(400, "URL repo tidak boleh kosong!", response)
@@ -316,7 +325,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }
 
     try {
-        cloneAndListFiles(url, response)
+        cloneAndListFiles(url, customParameter, customOutput, response)
     } catch (error) {
         console.log(error)
 

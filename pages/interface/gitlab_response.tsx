@@ -4,9 +4,9 @@ export interface GitlabReviewResponse {
 }
 
 export interface GitlabReviewResponseV2 {
-    result?: string,
-    message?: string,
-    resultArray?: string[],
+    result?: string
+    message?: string
+    resultArray?: string[]
     resultFinal?: FinalResultItem[]
 }
 

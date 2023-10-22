@@ -14,7 +14,7 @@ export default function Home() {
   const [inputList, setInputList] = useState<string[]>([]);
 
   useEffect(() => {
-
+    
   }, [inputList])
 
   async function doReview() {

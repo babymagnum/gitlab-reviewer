@@ -19,17 +19,17 @@ const chatModel = new ChatOpenAI({
     topP: 0.85,
     maxTokens: -1,
     verbose: true,
-    azureOpenAIApiKey: "ae283827498e4794963e3d423b0e9bf3",
-    azureOpenAIApiVersion: "2023-07-01-preview",
-    azureOpenAIApiDeploymentName: "gpt-35-turbo",
-    azureOpenAIBasePath: "https://devcodejp.openai.azure.com/openai/deployments",
+    azureOpenAIApiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+    azureOpenAIApiVersion: process.env.NEXT_PUBLIC_OPENAI_API_VERSION,
+    azureOpenAIApiDeploymentName: process.env.NEXT_PUBLIC_OPENAI_API_NAME,
+    azureOpenAIBasePath: process.env.NEXT_PUBLIC_OPENAI_API_BASE,
 });
 
 const embeddings = new OpenAIEmbeddings({
-    azureOpenAIApiKey: "ae283827498e4794963e3d423b0e9bf3",
-    azureOpenAIApiVersion: "2023-07-01-preview",
-    azureOpenAIApiDeploymentName: "embedding-ada-002",
-    azureOpenAIBasePath: "https://devcodejp.openai.azure.com/openai/deployments",
+    azureOpenAIApiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+    azureOpenAIApiVersion: process.env.NEXT_PUBLIC_OPENAI_API_VERSION,
+    azureOpenAIApiDeploymentName: process.env.NEXT_PUBLIC_OPENAI_API_EMBEDDING_NAME,
+    azureOpenAIBasePath: process.env.NEXT_PUBLIC_OPENAI_API_BASE,
 });
 
 function setResponseError(statusCode: number, message: string, response: NextApiResponse<GitlabReviewResponseV2>) {

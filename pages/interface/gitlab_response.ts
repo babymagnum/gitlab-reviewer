@@ -7,7 +7,7 @@ export interface GitlabReviewResponseV2 {
     result?: string
     message?: string
     resultArray?: string[]
-    resultFinal?: FinalResultItem[]
+    resultFinal?: FinalResultItem
 }
 
 export interface ReviewData {

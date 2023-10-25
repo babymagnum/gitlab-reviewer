@@ -1,21 +1,13 @@
 import Head from 'next/head';
-import styles from '../styles/Home.module.css';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { GitlabReviewResponseV2 } from './interface/gitlab_response';
-
-enum StateEnum {
-  IDLE, LOADING, SUCCESS, ERROR
-}
+import { StateEnum } from './interface/file_item';
 
 export default function Home() {
   const [urlInput, setUrlInput] = useState<string>("https://github.com/babymagnum/langchain_example");
   const [state, setState] = useState<StateEnum>(StateEnum.IDLE);
   const [result, setResult] = useState<GitlabReviewResponseV2>();
   const [inputList, setInputList] = useState<string[]>([]);
-
-  useEffect(() => {
-    
-  }, [inputList])
 
   async function doReview() {
     try {
@@ -55,12 +47,7 @@ export default function Home() {
       </Head>
 
       <main>
-        <h1 className={styles.title}>
-          Welcome to Git Reviewer!
-        </h1>
-
         <div>
-
           <input
             style={{ width: '100%' }}
             type="text"
@@ -102,86 +89,13 @@ export default function Home() {
                   <text style={{ marginTop: 10 }}>{result?.message || "Error!"}</text> :
                   <div>
                     <h1>This is the summary</h1>
-                    {
-                      (result.resultFinal || []).map(element => {
-                        return <div>
-                          <h2>*{element.parameter}</h2>
-                          <h3>Positive:</h3>
-                          <p style={{whiteSpace: 'pre-line'}}>{element.summaryPositive}</p>
-                          {/* {element.positive.map((positive, index) => <div>
-                            <p>{`${index + 1}. ${positive}`}</p>
-                          </div>)} */}
-                          <h3>Negative:</h3>
-                          <p style={{whiteSpace: 'pre-line'}}>{element.summaryNegative}</p>
-                          {/* {element.negative.map((negative, index) => <div>
-                            <p>{`${index + 1}. ${negative}`}</p>
-                          </div>)} */}
-                        </div>
-                      })
-                    }
-                    <br></br>
-                    <br></br>
-                    {
-                      (result.resultArray || []).map((element, index) => {
-                        return <div style={{ marginTop: 10, backgroundColor: 'grey', borderRadius: 10, padding: 10 }}>
-                          <text style={{ color: 'white', whiteSpace: 'pre-line' }}>{element}</text>
-                          <br></br>
-                        </div>
-                      })
-                    }
+                    <p style={{ whiteSpace: 'pre-line' }}>{result.resultFinal?.allReviews || ''}</p>
+                    <h1>This is the raw summary</h1>
+                    {result.resultFinal?.rawReviews.map(element => {
+                      return <text style={{whiteSpace: 'pre-line'}}>{element}</text>
+                    })}
                   </div>
-            // <text style={{ whiteSpace: 'pre-line' }}>{result?.result || ''}</text>
-            // state SUCCESS
-            // <div>
-            //   {/* Maintanability section */}
-            //   <h2>Maintanability</h2>
-            //   <h3>Pros</h3>
-            //   <ul>
-            //     {(result.result?.maintainability?.pros || []).map(element => {
-            //       return <li>{`${element.title || ""} ==> ${element.explanation || ""}`}</li>
-            //     })}
-            //   </ul>
-            //   <h3>Cons</h3>
-            //   <ul>
-            //     {(result.result?.maintainability?.cons || []).map(element => {
-            //       return <li>{`${element.title || ""} ==> ${element.explanation || ""}`}</li>
-            //     })}
-            //   </ul>
-            //   {/* Readability section */}
-            //   <h2>Readability</h2>
-            //   <h3>Pros</h3>
-            //   <ul>
-            //     {(result.result?.readability?.pros || []).map(element => {
-            //       return <li>{`${element.title || ""} ==> ${element.explanation || ""}`}</li>
-            //     })}
-            //   </ul>
-            //   <h3>Cons</h3>
-            //   <ul>
-            //     {(result.result?.readability?.cons || []).map(element => {
-            //       return <li>{`${element.title || ""} ==> ${element.explanation || ""}`}</li>
-            //     })}
-            //   </ul>
-            //   {/* Scalability section */}
-            //   <h2>Scalability</h2>
-            //   <h3>Pros</h3>
-            //   <ul>
-            //     {(result.result?.scalability?.pros || []).map(element => {
-            //       return <li>{`${element.title || ""} ==> ${element.explanation || ""}`}</li>
-            //     })}
-            //   </ul>
-            //   <h3>Cons</h3>
-            //   <ul>
-            //     {(result.result?.scalability?.cons || []).map(element => {
-            //       return <li>{`${element.title || ""} ==> ${element.explanation || ""}`}</li>
-            //     })}
-            //   </ul>
-            //   <h3>Summary</h3>
-            //   <p>{result.result?.summary || ""}</p>
-            //   <h3>Score: {`${result.result?.score || 0}`}</h3>
-            // </div>
           }
-
-
         </div>
       </main>
     </div>

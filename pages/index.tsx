@@ -91,6 +91,7 @@ export default function Home() {
                     <h1>This is the summary</h1>
                     <p style={{ whiteSpace: 'pre-line' }}>{result.resultFinal?.allReviews || ''}</p>
                     <h1>This is the raw summary</h1>
+                    <h3>Final Score: {result.resultFinal?.finalScore}</h3>
                     {result.resultFinal?.rawReviews.map(element => {
                       return <text style={{whiteSpace: 'pre-line'}}>{element}</text>
                     })}

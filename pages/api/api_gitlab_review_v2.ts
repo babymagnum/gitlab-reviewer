@@ -7,7 +7,7 @@ import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { loadQAMapReduceChain, LLMChain, loadSummarizationChain, MapReduceDocumentsChain, StuffDocumentsChain } from "langchain/chains";
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { GitlabReviewResponseV2 } from '../interface/gitlab_response';
+import { FinalResultItem, GitlabReviewResponseV2 } from '../interface/gitlab_response';
 import { PromptTemplate } from 'langchain/prompts';
 import { Document } from 'langchain/dist/document';
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -34,11 +34,31 @@ const embeddings = new OpenAIEmbeddings({
     azureOpenAIBasePath: process.env.NEXT_PUBLIC_OPENAI_API_BASE,
 });
 
+export default async function handler(request: NextApiRequest, response: NextApiResponse<GitlabReviewResponseV2>) {
+    const url = request.body.url || '';
+    const customParameter: string[] = request.body.custom_parameter || [];
+
+    if (url.trim().length === 0) {
+        setResponseError(400, "URL repo tidak boleh kosong!", response)
+        return
+    }
+
+    try {
+        cloneAndListFiles(url, customParameter, response)
+    } catch (error) {
+        console.log(error)
+
+        if (error.response) {
+            setResponseError(error.response.status, error.response.data, response)
+        } else {
+            setResponseError(500, "An error occurred during your request.", response)
+        }
+    }
+}
+
 function setResponseError(statusCode: number, message: string, response: NextApiResponse<GitlabReviewResponseV2>) {
     response.status(statusCode).json({
         message: message,
-        result: null,
-        resultArray: []
     })
 }
 
@@ -99,13 +119,13 @@ async function filterFilesUsingOpenAI(files: string[], customParameter: string[]
         Your task will select files that you are interested for code review, please select the most important file in your point of view, your selected files should mimic whole of the application
 
         Please follow below rule:
-        1. you can only select maximum 2 files from the data
+        1. you can only select maximum 5 files from the data
         2. Don't select file that related to document or image!
         3. your output will be on json array and the content is filepath only
 
         Example:
         [
-        "path/file1.js", "path/file2.js"
+        "path/file1.js", "path/file2.js", "path/file3.js", "path/file4.js", "path/file5.js"
         ]
         `),
         new HumanMessage(`
@@ -114,7 +134,7 @@ async function filterFilesUsingOpenAI(files: string[], customParameter: string[]
     `),
     ]);
 
-    console.log(`Result ==> ${result.content}`)
+    console.log(`Filtered Files ==> ${result.content}`)
 
     try {
         let filteredFiles: string[] = JSON.parse(result.content)
@@ -201,15 +221,13 @@ async function getTheContent(files: string[], customParameter: string[], cloneDi
 
         console.log(`${file} ==> ${result.content}`)
 
-        const score = result.content.slice(-10).split(";").pop().replaceAll(`"`, "")
-        console.log(`reviewScore ==> ${score}`)
+        const score = result.content.slice(-5).replaceAll(/[^0-9]/g, '')
         finalScore += Number(score)
 
         pageContents.push(result.content)
     }
 
-    console.log(`finalScore (${finalScore}) ==> ${finalScore / 2}`)
-    generateFinalResult(pageContents, finalScore / 2, customParameter, response)
+    generateFinalResult(pageContents, finalScore / pageContents.length, customParameter, response)
 }
 
 async function generateFinalResult(pageContents: string[], finalScore: number, customParameter: string[], response: NextApiResponse<GitlabReviewResponseV2>) {
@@ -220,8 +238,6 @@ async function generateFinalResult(pageContents: string[], finalScore: number, c
 
     response.status(200).json({
         message: 'berhasil',
-        result: '',
-        resultArray: pageContents,
         resultFinal: finalResult
     })
 }
@@ -299,33 +315,8 @@ async function getSummaryOfEachParameter(pageContents: string[], customParameter
         `
     })
 
-    finalResult.allReviews = result.text
-
     response.status(200).json({
         message: 'berhasil',
-        result: '',
-        resultArray: pageContents,
         resultFinal: finalResult
     })
-}
-export default async function handler(request: NextApiRequest, response: NextApiResponse<GitlabReviewResponseV2>) {
-    const url = request.body.url || '';
-    const customParameter: string[] = request.body.custom_parameter || [];
-
-    if (url.trim().length === 0) {
-        setResponseError(400, "URL repo tidak boleh kosong!", response)
-        return
-    }
-
-    try {
-        cloneAndListFiles(url, customParameter, response)
-    } catch (error) {
-        console.log(error)
-
-        if (error.response) {
-            setResponseError(error.response.status, error.response.data, response)
-        } else {
-            setResponseError(500, "An error occurred during your request.", response)
-        }
-    }
 }

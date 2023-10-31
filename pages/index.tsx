@@ -7,7 +7,6 @@ export default function Home() {
   const [urlInput, setUrlInput] = useState<string>("https://github.com/babymagnum/langchain_example");
   const [state, setState] = useState<StateEnum>(StateEnum.IDLE);
   const [result, setResult] = useState<GitlabReviewResponseV2>();
-  const [inputList, setInputList] = useState<string[]>([]);
 
   async function doReview() {
     try {
@@ -19,7 +18,6 @@ export default function Home() {
         },
         body: JSON.stringify({
           url: urlInput,
-          custom_parameter: inputList,
         }),
       });
       setState(response.status === 200 ? StateEnum.SUCCESS : StateEnum.ERROR);
@@ -56,7 +54,7 @@ export default function Home() {
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
           />
-          <br></br>
+          {/* <br></br>
           {
             inputList.map((element, index) => {
               return <input
@@ -72,11 +70,7 @@ export default function Home() {
                 }}
               />
             })
-          }
-          <br></br>
-          <button style={{ marginTop: 10 }} onClick={() => {
-            setInputList((_value) => [..._value, ''])
-          }}>Add parameter</button>
+          }`1a */}
           <br></br>
           <button style={{ marginTop: 10 }} onClick={() => doReview()}>Review</button>
           <br></br>
@@ -88,12 +82,10 @@ export default function Home() {
                 state === StateEnum.ERROR ?
                   <text style={{ marginTop: 10 }}>{result?.message || "Error!"}</text> :
                   <div>
-                    <h1>This is the summary</h1>
-                    <p style={{ whiteSpace: 'pre-line' }}>{result.resultFinal?.allReviews || ''}</p>
                     <h1>This is the raw summary</h1>
                     <h3>Final Score: {result.resultFinal?.finalScore}</h3>
                     {result.resultFinal?.rawReviews.map(element => {
-                      return <text style={{whiteSpace: 'pre-line'}}>{element}</text>
+                      return <text style={{ whiteSpace: 'pre-line' }}>{element}</text>
                     })}
                   </div>
           }

@@ -1,9 +1,7 @@
-export interface FinalResultItem {  
-    rawReviews: string[],
-    finalScore: number
-}
+import { OverallReviewItem } from "./overall_review_item"
 
 export interface GitlabReviewResponseV2 {
     message?: string
-    resultFinal?: FinalResultItem
+    resultFinal?: OverallReviewItem[]
+    finalScore?: number
 }

@@ -81,14 +81,28 @@ export default function Home() {
                 <text style={{ marginTop: 10 }}>{"Loading..."}</text> :
                 state === StateEnum.ERROR ?
                   <text style={{ marginTop: 10 }}>{result?.message || "Error!"}</text> :
-                  <div>
-                    <h1>This is the raw summary</h1>
-                    <h3>Final Score: {result.resultFinal?.finalScore}</h3>
-                    {result.resultFinal?.rawReviews.map(element => {
-                      return <text style={{ whiteSpace: 'pre-line' }}>{element}</text>
-                    })}
-                  </div>
+                  (result.resultFinal || []).map(element => {
+                    return <div>
+                      <h2>{element.subject}</h2>
+                      <h3>Reviews</h3>
+                      {element.reviews.map(review => {
+                        return <div>
+                          <text>{review.keyword || ''} - {review.reviewStatus || ''}</text>
+                          <br></br>
+                          <text>{review.proofOfEvidence || ''}</text>
+                          <br></br>
+                          <text>{review.filepath || ''}</text>
+                          <br></br>
+                          <text>score: {review.score || 0}</text>
+                        </div>
+                      })}
+                      <h3>Summary</h3>
+                      <p>{element.summary || ''}</p>
+                      <h3>Score: {element.score || 0}</h3>
+                    </div>
+                  })
           }
+          <h3>Final Score: {result.finalScore || 0}</h3>
         </div>
       </main>
     </div>
